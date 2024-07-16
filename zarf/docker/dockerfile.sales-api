@@ -1,0 +1,26 @@
+# Build stage
+FROM golang:1.22 AS build_sales-api
+ENV CGO_ENABLED=0
+ARG BUILD_REF
+
+COPY . /service
+
+WORKDIR /service/app/services/sales-api
+
+RUN go build -ldflags "-X main.build=${BUILD_REF}" -o sales-api
+
+FROM alpine:latest
+
+ARG BUILD_DATE
+ARG BUILD_REF
+
+WORKDIR /service
+
+COPY --from=build_sales-api /service/app/services/sales-api/sales-api /service/sales-api
+
+CMD ["./sales-api"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="First App Title" \
+      org.opencontainers.image.author="Turan" \
+      org.opencontainers.image.revision="${BUILD_REF}"
